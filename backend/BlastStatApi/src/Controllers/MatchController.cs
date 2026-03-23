@@ -98,7 +98,7 @@ public class MatchController : ControllerBase
         var match = _matchService.GetMatch();
         var scoreline = match.Rounds.Select(r => new
         {
-            round = r.Number,
+            round = r.RoundNumber,
             scoreCT = r.ScoreCT,
             scoreT = r.ScoreT,
             winner = r.WinnerSide,
