@@ -6,7 +6,7 @@
 
 | Layer    | Technology                          |
 |----------|-------------------------------------|
-| Backend  | C# - ASP.NET Core - Web API         |
+| Backend  | C# - ASP.NET Core 10 - Web API         |
 | Frontend | React - TypeScript - Vite           |
 | Styling  | CSS                                 |
 
