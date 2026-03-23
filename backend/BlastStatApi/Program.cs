@@ -17,7 +17,7 @@ builder.Services.AddSingleton<MatchService>();
 // Allow the React dev server to call this API
 builder.Services.AddCors(options =>
     options.AddPolicy("DevCors", policy =>
-        policy.WithOrigins("http://localhost:5173")
+        policy.WithOrigins("http://localhost:5173", "http://localhost:5174")
               .AllowAnyMethod()
               .AllowAnyHeader()));
 
