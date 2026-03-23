@@ -1,6 +1,27 @@
-# BlastChewedUp
+# Blast Chewed Up Code Challenge
 
 
+
+## Tech Stack
+
+| Layer    | Technology                          |
+|----------|-------------------------------------|
+| Backend  | C# - ASP.NET Core - Web API         |
+| Frontend | React - TypeScript - Vite           |
+| Styling  | CSS                                 |
+
+
+## Getting started
+
+### Prerequisites
+
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- TODO
+
+### Backend
+
+
+### Frontend
 
 
 
