@@ -2,12 +2,12 @@
 
 /* ── Variables ─────────────────────────────────────────────────────────────── */
 :root {
-  --bg:        #0d0f12;
-  --surface:   #13161b;
-  --surface-2: #1c2028;
-  --border:    #2a2f3a;
-  --text:      #e8eaf0;
-  --muted:     #6b7280;
+  --bg:        #1f0c19;
+  --surface:   #2a1825;
+  --surface-2: #41303b;
+  --border:    #4d3d48;
+  --text:      #e9e7e8;
+  --muted:     #8d858c;
 
   --ct:        #4a9eff;
   --ct-dim:    rgba(74, 158, 255, 0.15);
