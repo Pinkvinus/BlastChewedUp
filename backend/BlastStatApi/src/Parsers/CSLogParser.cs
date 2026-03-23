@@ -10,7 +10,7 @@ namespace BlastStatApi.Parsers;
 ///   2. From that point, collect Round_Start / Round_End pairs, kills, and team/score lines.
 ///   3. Build per-player stats from the collected kill events.
 /// </summary>
-public class CsgoLogParser
+public class CSLogParser
 {
     // ── Regex patterns ─────────────────────────────────────────────────────────
     private static readonly Regex TimestampPattern =
@@ -49,7 +49,7 @@ public class CsgoLogParser
         var (rounds, kills) = ExtractRoundsAndKills(matchEntries, teamCT, teamT);
         var playerStats = BuildPlayerStats(kills, rounds.Count);
 
-        string map = ExtractMap(entries, lastMatchStartIndex);
+        string map = ExtractMap(matchEntries); // was: ExtractMap(entries, lastMatchStartIndex)
 
         return new MatchData(map, teamCT, teamT, rounds, kills, playerStats);
     }
@@ -79,9 +79,10 @@ public class CsgoLogParser
         return idx < 0 ? 0 : idx;
     }
 
-    private static string ExtractMap(List<(DateTime, string Content)> entries, int idx)
+    private static string ExtractMap(List<(DateTime Time, string Content)> entries)
     {
-        var m = MatchStartPattern.Match(entries[idx].Content);
+        var first = entries.FirstOrDefault(e => MatchStartPattern.IsMatch(e.Content));
+        var m = MatchStartPattern.Match(first.Content ?? string.Empty);
         return m.Success ? m.Groups[1].Value : "unknown";
     }
 

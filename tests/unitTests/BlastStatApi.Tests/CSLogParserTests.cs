@@ -3,12 +3,12 @@
 namespace BlastStatApi.Tests.src.Parsers;
 
 /// <summary>
-/// Unit tests for CsgoLogParser.
+/// Unit tests for CsLogParser.
 /// Each test builds a minimal synthetic log string — no file I/O needed.
 /// </summary>
-public class CsgoLogParserTests
+public class CsLogParserTests
 {
-    private readonly CsgoLogParser _parser = new();
+    private readonly CSLogParser _parser = new();
 
     // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -28,7 +28,7 @@ public class CsgoLogParserTests
     /// <summary>Minimal single-round log that results in one completed round.</summary>
     private static string SingleRoundLog(
         string ctTeam = "TeamVitality",
-        string tTeam  = "NAVI",
+        string tTeam  = "NAVI GGBET",
         string winner = "CT",
         string sfui   = "SFUI_Notice_CTs_Win",
         int scoreCT   = 1,
@@ -44,7 +44,7 @@ public class CsgoLogParserTests
     // ── Map extraction ──────────────────────────────────────────────────────────
 
     [Fact]
-    public void Parse_ExtractsMapName()
+    public void Parse_ExtractsMapName_nuke()
     {
         var result = _parser.Parse(SingleRoundLog());
         Assert.Equal("de_nuke", result.Map);
@@ -53,20 +53,20 @@ public class CsgoLogParserTests
     // ── Team extraction ────────────────────────────────────────────────────────
 
     [Fact]
-    public void Parse_ExtractsCTTeamName()
+    public void Parse_ExtractsCTTeamName_Vitality()
     {
         var result = _parser.Parse(SingleRoundLog(ctTeam: "TeamVitality"));
         Assert.Equal("TeamVitality", result.TeamCT.Name);
     }
 
     [Fact]
-    public void Parse_ExtractsTTeamName()
+    public void Parse_ExtractsTTeamName_NAVI()
     {
-        var result = _parser.Parse(SingleRoundLog(tTeam: "NAVI"));
-        Assert.Equal("NAVI", result.TeamT.Name);
+        var result = _parser.Parse(SingleRoundLog(tTeam: "NAVI GGBET"));
+        Assert.Equal("NAVI GGBET", result.TeamT.Name);
     }
 
-    // ── Last Match_Start wins ──────────────────────────────────────────────────
+    // ── Last Match_Start ─────────────────────────────────────────────────────
 
     [Fact]
     public void Parse_UsesLastMatchStart_IgnoresEarlierRounds()
@@ -82,7 +82,7 @@ public class CsgoLogParserTests
             // Real match starts here
             "World triggered \"Match_Start\" on \"de_nuke\"",
             "Team playing \"CT\": TeamVitality",
-            "Team playing \"TERRORIST\": NAVI",
+            "Team playing \"TERRORIST\": NAVI GGBET",
             "World triggered \"Round_Start\"",
             "Team \"CT\" triggered \"SFUI_Notice_CTs_Win\" (CT \"1\") (T \"0\")",
             "World triggered \"Round_End\""
@@ -103,7 +103,7 @@ public class CsgoLogParserTests
         var log = BuildLog(
             "World triggered \"Match_Start\" on \"de_nuke\"",
             "Team playing \"CT\": TeamVitality",
-            "Team playing \"TERRORIST\": NAVI",
+            "Team playing \"TERRORIST\": NAVI GGBET",
             "World triggered \"Round_Start\"",
             "Team \"CT\" triggered \"SFUI_Notice_CTs_Win\" (CT \"1\") (T \"0\")",
             "World triggered \"Round_End\"",
@@ -125,7 +125,7 @@ public class CsgoLogParserTests
         var log = BuildLog(
             "World triggered \"Match_Start\" on \"de_nuke\"",
             "Team playing \"CT\": TeamVitality",
-            "Team playing \"TERRORIST\": NAVI",
+            "Team playing \"TERRORIST\": NAVI GGBET",
             "World triggered \"Round_Start\"",
             "Team \"CT\" triggered \"SFUI_Notice_CTs_Win\" (CT \"1\") (T \"0\")",
             "World triggered \"Round_End\"",
@@ -181,9 +181,9 @@ public class CsgoLogParserTests
     public void Parse_TerroristWin_WinnerSideIsTTeamName()
     {
         var result = _parser.Parse(SingleRoundLog(
-            tTeam: "NAVI", winner: "TERRORIST",
+            tTeam: "NAVI GGBET", winner: "TERRORIST",
             sfui: "SFUI_Notice_Terrorists_Win", scoreCT: 0, scoreT: 1));
-        Assert.Equal("NAVI", result.Rounds[0].WinnerSide);
+        Assert.Equal("NAVI GGBET", result.Rounds[0].WinnerSide);
     }
 
     // ── Kill parsing ───────────────────────────────────────────────────────────
@@ -194,7 +194,7 @@ public class CsgoLogParserTests
         var log = BuildLog(
             "World triggered \"Match_Start\" on \"de_nuke\"",
             "Team playing \"CT\": TeamVitality",
-            "Team playing \"TERRORIST\": NAVI",
+            "Team playing \"TERRORIST\": NAVI GGBET",
             "World triggered \"Round_Start\"",
             "\"s1mple<30><STEAM_1:1:1><TERRORIST>\" [0 0 0] killed \"ZywOo<26><STEAM_1:1:2><CT>\" [0 0 0] with \"ak47\"",
             "\"s1mple<30><STEAM_1:1:1><TERRORIST>\" [0 0 0] killed \"apEX<25><STEAM_1:1:3><CT>\" [0 0 0] with \"ak47\"",
@@ -212,7 +212,7 @@ public class CsgoLogParserTests
         var log = BuildLog(
             "World triggered \"Match_Start\" on \"de_nuke\"",
             "Team playing \"CT\": TeamVitality",
-            "Team playing \"TERRORIST\": NAVI",
+            "Team playing \"TERRORIST\": NAVI GGBET",
             "World triggered \"Round_Start\"",
             "\"s1mple<30><STEAM_1:1:1><TERRORIST>\" [0 0 0] killed \"ZywOo<26><STEAM_1:1:2><CT>\" [0 0 0] with \"ak47\" (headshot)",
             "\"s1mple<30><STEAM_1:1:1><TERRORIST>\" [0 0 0] killed \"apEX<25><STEAM_1:1:3><CT>\" [0 0 0] with \"ak47\"",
@@ -232,7 +232,7 @@ public class CsgoLogParserTests
         var log = BuildLog(
             "World triggered \"Match_Start\" on \"de_nuke\"",
             "Team playing \"CT\": TeamVitality",
-            "Team playing \"TERRORIST\": NAVI",
+            "Team playing \"TERRORIST\": NAVI GGBET",
             "\"s1mple<30><STEAM_1:1:1><TERRORIST>\" [0 0 0] killed \"ZywOo<26><STEAM_1:1:2><CT>\" [0 0 0] with \"ak47\"",
             "World triggered \"Round_Start\"",
             "Team \"CT\" triggered \"SFUI_Notice_CTs_Win\" (CT \"1\") (T \"0\")",
@@ -250,7 +250,7 @@ public class CsgoLogParserTests
         var log = BuildLog(
             "World triggered \"Match_Start\" on \"de_nuke\"",
             "Team playing \"CT\": TeamVitality",
-            "Team playing \"TERRORIST\": NAVI",
+            "Team playing \"TERRORIST\": NAVI GGBET",
             "World triggered \"Round_Start\"",
             "\"s1mple<30><STEAM_1:1:1><TERRORIST>\" [0 0 0] killed other \"func_breakable<209>\" [0 0 0] with \"ak47\"",
             "Team \"CT\" triggered \"SFUI_Notice_CTs_Win\" (CT \"1\") (T \"0\")",
@@ -269,7 +269,7 @@ public class CsgoLogParserTests
         var log = BuildLog(
             "World triggered \"Match_Start\" on \"de_nuke\"",
             "Team playing \"CT\": TeamVitality",
-            "Team playing \"TERRORIST\": NAVI",
+            "Team playing \"TERRORIST\": NAVI GGBET",
             "World triggered \"Round_Start\"",
             "\"s1mple<30><STEAM_1:1:1><TERRORIST>\" [0 0 0] killed \"ZywOo<26><STEAM_1:1:2><CT>\" [0 0 0] with \"ak47\"",
             "\"s1mple<30><STEAM_1:1:1><TERRORIST>\" [0 0 0] killed \"apEX<25><STEAM_1:1:3><CT>\" [0 0 0] with \"ak47\"",
@@ -288,7 +288,7 @@ public class CsgoLogParserTests
         var log = BuildLog(
             "World triggered \"Match_Start\" on \"de_nuke\"",
             "Team playing \"CT\": TeamVitality",
-            "Team playing \"TERRORIST\": NAVI",
+            "Team playing \"TERRORIST\": NAVI GGBET",
             "World triggered \"Round_Start\"",
             "\"s1mple<30><STEAM_1:1:1><TERRORIST>\" [0 0 0] killed \"ZywOo<26><STEAM_1:1:2><CT>\" [0 0 0] with \"ak47\"",
             "\"apEX<25><STEAM_1:1:3><CT>\" [0 0 0] killed \"ZywOo<26><STEAM_1:1:2><CT>\" [0 0 0] with \"m4a1\"",
@@ -307,7 +307,7 @@ public class CsgoLogParserTests
         var log = BuildLog(
             "World triggered \"Match_Start\" on \"de_nuke\"",
             "Team playing \"CT\": TeamVitality",
-            "Team playing \"TERRORIST\": NAVI",
+            "Team playing \"TERRORIST\": NAVI GGBET",
             "World triggered \"Round_Start\"",
             "\"s1mple<30><STEAM_1:1:1><TERRORIST>\" [0 0 0] killed \"ZywOo<26><STEAM_1:1:2><CT>\" [0 0 0] with \"ak47\" (headshot)",
             "\"s1mple<30><STEAM_1:1:1><TERRORIST>\" [0 0 0] killed \"apEX<25><STEAM_1:1:3><CT>\" [0 0 0] with \"ak47\"",
@@ -326,7 +326,7 @@ public class CsgoLogParserTests
         var log = BuildLog(
             "World triggered \"Match_Start\" on \"de_nuke\"",
             "Team playing \"CT\": TeamVitality",
-            "Team playing \"TERRORIST\": NAVI",
+            "Team playing \"TERRORIST\": NAVI GGBET",
             "World triggered \"Round_Start\"",
             "\"s1mple<30><STEAM_1:1:1><TERRORIST>\" [0 0 0] killed \"ZywOo<26><STEAM_1:1:2><CT>\" [0 0 0] with \"ak47\"",
             "\"s1mple<30><STEAM_1:1:1><TERRORIST>\" [0 0 0] killed \"apEX<25><STEAM_1:1:3><CT>\" [0 0 0] with \"ak47\"",
@@ -347,7 +347,7 @@ public class CsgoLogParserTests
         var log = BuildLog(
             "World triggered \"Match_Start\" on \"de_nuke\"",
             "Team playing \"CT\": TeamVitality",
-            "Team playing \"TERRORIST\": NAVI",
+            "Team playing \"TERRORIST\": NAVI GGBET",
             "World triggered \"Round_Start\"",
             "\"s1mple<30><STEAM_1:1:1><TERRORIST>\" [0 0 0] killed \"ZywOo<26><STEAM_1:1:2><CT>\" [0 0 0] with \"ak47\"",
             "\"s1mple<30><STEAM_1:1:1><TERRORIST>\" [0 0 0] killed \"apEX<25><STEAM_1:1:3><CT>\" [0 0 0] with \"ak47\"",
@@ -378,7 +378,7 @@ public class CsgoLogParserTests
         // No Match_Start at all — parser falls back to index 0 and still processes rounds
         var log = BuildLog(
             "Team playing \"CT\": TeamVitality",
-            "Team playing \"TERRORIST\": NAVI",
+            "Team playing \"TERRORIST\": NAVI GGBET",
             "World triggered \"Round_Start\"",
             "Team \"CT\" triggered \"SFUI_Notice_CTs_Win\" (CT \"1\") (T \"0\")",
             "World triggered \"Round_End\""
@@ -394,7 +394,7 @@ public class CsgoLogParserTests
         var log = BuildLog(
             "World triggered \"Match_Start\" on \"de_nuke\"",
             "Team playing \"CT\": TeamVitality",
-            "Team playing \"TERRORIST\": NAVI",
+            "Team playing \"TERRORIST\": NAVI GGBET",
             "World triggered \"Round_Start\"",
             "\"s1mple<30><STEAM_1:1:1><TERRORIST>\" [0 0 0] killed \"ZywOo<26><STEAM_1:1:2><CT>\" [0 0 0] with \"ak47\"",
             "Team \"TERRORIST\" triggered \"SFUI_Notice_Terrorists_Win\" (CT \"0\") (T \"1\")",
