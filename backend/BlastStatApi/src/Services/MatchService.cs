@@ -10,13 +10,13 @@ namespace BlastStatApi.Services;
 /// </summary>
 public class MatchService
 {
-    private readonly CsgoLogParser _parser;
+    private readonly CSLogParser _parser;
     private readonly ILogger<MatchService> _logger;
     private readonly string _logPath;
 
     private MatchData? _cached;
 
-    public MatchService(CsgoLogParser parser, ILogger<MatchService> logger, IConfiguration config)
+    public MatchService(CSLogParser parser, ILogger<MatchService> logger, IConfiguration config)
     {
         _parser = parser;
         _logger = logger;
