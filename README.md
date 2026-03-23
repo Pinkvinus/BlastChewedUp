@@ -20,6 +20,16 @@
 
 ### Backend
 
+```bash
+# Copy the log file to the project
+cp NAVIvsVitaGF-Nuke.txt backend/BlastStatApi/match.log
+ 
+cd backend/BlastStatApi
+dotnet run
+# API is now running at http://localhost:5000
+# Swagger UI at http://localhost:5000/swagger
+```
+ 
 
 ### Frontend
 
