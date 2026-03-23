@@ -1,6 +1,37 @@
-# BlastChewedUp
+# Blast Chewed Up Code Challenge
 
 
+
+## Tech Stack
+
+| Layer    | Technology                          |
+|----------|-------------------------------------|
+| Backend  | C# - ASP.NET Core 10 - Web API         |
+| Frontend | React - TypeScript - Vite           |
+| Styling  | CSS                                 |
+
+
+## Getting started
+
+### Prerequisites
+
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- TODO
+
+### Backend
+
+```bash
+# Copy the log file to the project
+cp NAVIvsVitaGF-Nuke.txt backend/BlastStatApi/match.log
+ 
+cd backend/BlastStatApi
+dotnet run
+# API is now running at http://localhost:5000
+# Swagger UI at http://localhost:5000/swagger
+```
+ 
+
+### Frontend
 
 
 
