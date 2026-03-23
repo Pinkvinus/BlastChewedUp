@@ -1,121 +1,45 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useQuery } from './hooks/useQuery';
+import { api } from './api/matchApi';
+import { ScoreHeader } from './components/scoreHeader';
+import { PlayerTable } from './components/playerTable';
+import { RoundTimeline } from './components/roundTimeline';
+import { ScorelineChart } from './components/scorelineChart';
+import { WeaponBreakdown } from './components/weaponBreakdown';
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  console.log('App rendering');
+  const summary = useQuery(api.getSummary);
+  console.log('summary state:', summary);
+
+  const players   = useQuery(api.getPlayers);
+  const rounds    = useQuery(api.getRounds);
+  const scoreline = useQuery(api.getScoreline);
+
+  const loading = summary.loading || players.loading || rounds.loading || scoreline.loading;
+  const error   = summary.error   || players.error   || rounds.error   || scoreline.error;
+
+  if (loading) return <div className="loading-screen"><div className="spinner" /><p>Loading match data…</p></div>;
+  if (error)   return <div className="error-screen"><p>⚠ {error}</p></div>;
+
+  const { teamCT, teamT } = summary.data!;
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="app">
+      <ScoreHeader summary={summary.data!} />
+      <main className="grid">
+        <div className="col col--wide">
+          <ScorelineChart scoreline={scoreline.data!} teamCT={teamCT} teamT={teamT} />
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
+        <div className="col col--wide">
+          <PlayerTable players={players.data!} teamCT={teamCT} teamT={teamT} />
         </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+        <div className="col col--half">
+          <RoundTimeline rounds={rounds.data!} teamCT={teamCT} teamT={teamT} />
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
+        <div className="col col--half">
+          <WeaponBreakdown players={players.data!} teamCT={teamCT} />
         </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      </main>
+    </div>
+  );
 }
-
-export default App
