@@ -3,14 +3,7 @@ using BlastStatApi.Models;
 
 namespace BlastStatApi.Parsers;
 
-/// <summary>
-/// Parses a CS:GO server log file into structured match data.
-/// Strategy:
-///   1. Find the LAST Match_Start event (per the hint, only the last one is real).
-///   2. From that point, collect Round_Start / Round_End pairs, kills, and team/score lines.
-///   3. Build per-player stats from the collected kill events.
-/// </summary>
-public class CsgoLogParser
+public class CSLogParser
 {
     // ── Regex patterns ─────────────────────────────────────────────────────────
     private static readonly Regex TimestampPattern =
@@ -25,15 +18,29 @@ public class CsgoLogParser
     private static readonly Regex RoundStartPattern =
         new(@"World triggered ""Round_Start""", RegexOptions.Compiled);
 
-    private static readonly Regex RoundEndPattern =
-        new(@"World triggered ""Round_End""", RegexOptions.Compiled);
-
     private static readonly Regex TeamWinPattern =
         new(@"Team ""(CT|TERRORIST)"" triggered ""(SFUI_Notice_\w+)"" \(CT ""(\d+)""\) \(T ""(\d+)""\)",
             RegexOptions.Compiled);
 
     private static readonly Regex KillPattern =
         new(@"""(.+?)<\d+><[^>]*><(CT|TERRORIST)>"" \[.+?\] killed ""(.+?)<\d+><[^>]*><(CT|TERRORIST)>"" \[.+?\] with ""(\w+)""(?: \(headshot\))?",
+            RegexOptions.Compiled);
+
+    private static readonly Regex UtilPattern =
+        new(@"""(.+?)<\d+><[^>]*><(CT|TERRORIST)>"" threw (smokegrenade|flashbang|hegrenade|molotov|incgrenade)",
+            RegexOptions.Compiled);
+
+    private static readonly Regex BombPlantPattern =
+        new(@"""(.+?)<\d+><[^>]*><(CT|TERRORIST)>"" triggered ""Planted_The_Bomb"" at bombsite (\w+)",
+            RegexOptions.Compiled);
+
+    private static readonly Regex BombDefusePattern =
+        new(@"""(.+?)<\d+><[^>]*><(CT|TERRORIST)>"" triggered ""Defused_The_Bomb""",
+            RegexOptions.Compiled);
+
+    // "Name<id><steam><SIDE>" money change 16000-2700 = $13300 (tracked) (purchase: weapon_ak47)
+    private static readonly Regex PurchasePattern =
+        new(@"""(.+?)<\d+><[^>]*><(CT|TERRORIST)>"" money change (\d+)-(\d+) = \$(\d+) \(tracked\) \(purchase: ([^)]+)\)",
             RegexOptions.Compiled);
 
     // ── Public entry point ─────────────────────────────────────────────────────
@@ -46,12 +53,11 @@ public class CsgoLogParser
         var matchEntries = entries.Skip(lastMatchStartIndex).ToList();
 
         var (teamCT, teamT) = ExtractTeams(matchEntries);
-        var (rounds, kills) = ExtractRoundsAndKills(matchEntries, teamCT, teamT);
+        var (rounds, kills, events) = ExtractAll(matchEntries, teamCT, teamT);
         var playerStats = BuildPlayerStats(kills, rounds.Count);
 
         string map = ExtractMap(entries, lastMatchStartIndex);
-
-        return new MatchData(map, teamCT, teamT, rounds, kills, playerStats);
+        return new MatchData(map, teamCT, teamT, rounds, kills, events, playerStats);
     }
 
     // ── Step 1: Parse timestamps ───────────────────────────────────────────────
@@ -99,74 +105,150 @@ public class CsgoLogParser
         return (new TeamInfo(ct, "CT"), new TeamInfo(t, "TERRORIST"));
     }
 
-    // ── Step 4: Walk log building rounds + kills ───────────────────────────────
-    private static (List<Round> Rounds, List<KillEvent> Kills) ExtractRoundsAndKills(
-        List<(DateTime Time, string Content)> entries,
-        TeamInfo teamCT, TeamInfo teamT)
+    // ── Step 4: Walk the log ───────────────────────────────────────────────────
+    private static (List<Round> Rounds, List<KillEvent> Kills, List<MatchEvent> Events)
+        ExtractAll(List<(DateTime Time, string Content)> entries, TeamInfo teamCT, TeamInfo teamT)
     {
-        var rounds = new List<Round>();
-        var allKills = new List<KillEvent>();
+        var rounds    = new List<Round>();
+        var allKills  = new List<KillEvent>();
+        var allEvents = new List<MatchEvent>();
 
+        DateTime? matchStart = null;
         DateTime? roundStart = null;
         var roundKills = new List<KillEvent>();
         int roundNumber = 0;
 
         foreach (var (time, content) in entries)
         {
-            // Round start
+            double offset() => (time - matchStart!.Value).TotalSeconds;
+
+            // ── Round start ────────────────────────────────────────────────────
             if (RoundStartPattern.IsMatch(content))
             {
+                matchStart ??= time;
                 roundStart = time;
                 roundKills = new List<KillEvent>();
+                roundNumber++;
+
+                allEvents.Add(new MatchEvent(
+                    MatchOffsetSeconds: (roundStart.Value - matchStart.Value).TotalSeconds,
+                    RoundNumber: roundNumber,
+                    EventType: "round_start",
+                    PlayerName: "",
+                    PlayerTeam: "",
+                    Detail: $"Round {roundNumber}",
+                    Headshot: false
+                ));
                 continue;
             }
 
-            // Kill event (only player-vs-player, not "killed other")
-            var killMatch = KillPattern.Match(content);
-            if (killMatch.Success && roundStart.HasValue)
+            if (!matchStart.HasValue || !roundStart.HasValue) continue;
+
+            // ── Purchase ───────────────────────────────────────────────────────
+            var purchaseMatch = PurchasePattern.Match(content);
+            if (purchaseMatch.Success)
             {
-                bool headshot = content.Contains("(headshot)");
-                var kill = new KillEvent(
-                    Timestamp: time,
-                    KillerName: killMatch.Groups[1].Value.Trim(),
-                    KillerTeam: ResolveTeamName(killMatch.Groups[2].Value, teamCT, teamT),
-                    VictimName: killMatch.Groups[3].Value.Trim(),
-                    VictimTeam: ResolveTeamName(killMatch.Groups[4].Value, teamCT, teamT),
-                    Weapon: killMatch.Groups[5].Value,
-                    Headshot: headshot,
-                    RoundNumber: roundNumber + 1
-                );
+                string item     = purchaseMatch.Groups[6].Value.Trim();
+                int before      = int.Parse(purchaseMatch.Groups[3].Value);
+                int cost        = int.Parse(purchaseMatch.Groups[4].Value);
+                int after       = int.Parse(purchaseMatch.Groups[5].Value);
+                string friendly = FriendlyItemName(item);
+
+                allEvents.Add(new MatchEvent(
+                    MatchOffsetSeconds: offset(),
+                    RoundNumber: roundNumber,
+                    EventType: "purchase",
+                    PlayerName: purchaseMatch.Groups[1].Value.Trim(),
+                    PlayerTeam: ResolveTeamName(purchaseMatch.Groups[2].Value, teamCT, teamT),
+                    Detail: $"{friendly}|{cost}|{before}|{after}",
+                    Headshot: false
+                ));
+                continue;
+            }
+
+            // ── Kill ───────────────────────────────────────────────────────────
+            var killMatch = KillPattern.Match(content);
+            if (killMatch.Success)
+            {
+                bool headshot   = content.Contains("(headshot)");
+                string killer   = killMatch.Groups[1].Value.Trim();
+                string killerT  = ResolveTeamName(killMatch.Groups[2].Value, teamCT, teamT);
+                string victim   = killMatch.Groups[3].Value.Trim();
+                string victimT  = ResolveTeamName(killMatch.Groups[4].Value, teamCT, teamT);
+                string weapon   = killMatch.Groups[5].Value;
+
+                var kill = new KillEvent(time, killer, killerT, victim, victimT,
+                    weapon, headshot, roundNumber, offset());
                 roundKills.Add(kill);
                 allKills.Add(kill);
+
+                allEvents.Add(new MatchEvent(offset(), roundNumber, "kill",
+                    killer, killerT,
+                    Detail: $"{weapon}|{victim}|{victimT}",
+                    Headshot: headshot));
                 continue;
             }
 
-            // Round end with win condition
-            var winMatch = TeamWinPattern.Match(content);
-            if (winMatch.Success && roundStart.HasValue)
+            // ── Util throw ─────────────────────────────────────────────────────
+            var utilMatch = UtilPattern.Match(content);
+            if (utilMatch.Success)
             {
-                roundNumber++;
-                string winnerSide = winMatch.Groups[1].Value;
+                allEvents.Add(new MatchEvent(offset(), roundNumber, "util",
+                    PlayerName: utilMatch.Groups[1].Value.Trim(),
+                    PlayerTeam: ResolveTeamName(utilMatch.Groups[2].Value, teamCT, teamT),
+                    Detail: utilMatch.Groups[3].Value,
+                    Headshot: false));
+                continue;
+            }
+
+            // ── Bomb plant ─────────────────────────────────────────────────────
+            var plantMatch = BombPlantPattern.Match(content);
+            if (plantMatch.Success)
+            {
+                allEvents.Add(new MatchEvent(offset(), roundNumber, "bomb_plant",
+                    PlayerName: plantMatch.Groups[1].Value.Trim(),
+                    PlayerTeam: ResolveTeamName(plantMatch.Groups[2].Value, teamCT, teamT),
+                    Detail: $"bombsite {plantMatch.Groups[3].Value}",
+                    Headshot: false));
+                continue;
+            }
+
+            // ── Bomb defuse ────────────────────────────────────────────────────
+            var defuseMatch = BombDefusePattern.Match(content);
+            if (defuseMatch.Success)
+            {
+                allEvents.Add(new MatchEvent(offset(), roundNumber, "bomb_defuse",
+                    PlayerName: defuseMatch.Groups[1].Value.Trim(),
+                    PlayerTeam: ResolveTeamName(defuseMatch.Groups[2].Value, teamCT, teamT),
+                    Detail: null,
+                    Headshot: false));
+                continue;
+            }
+
+            // ── Round end ──────────────────────────────────────────────────────
+            var winMatch = TeamWinPattern.Match(content);
+            if (winMatch.Success)
+            {
+                string winnerSide   = winMatch.Groups[1].Value;
                 string winCondition = MapWinCondition(winMatch.Groups[2].Value);
                 int scoreCT = int.Parse(winMatch.Groups[3].Value);
-                int scoreT = int.Parse(winMatch.Groups[4].Value);
+                int scoreT  = int.Parse(winMatch.Groups[4].Value);
 
                 rounds.Add(new Round(
-                    RoundNumber: roundNumber,
+                    Number: roundNumber,
                     WinnerSide: winnerSide == "CT" ? teamCT.Name : teamT.Name,
                     WinCondition: winCondition,
-                    ScoreCT: scoreCT,
-                    ScoreT: scoreT,
-                    StartTime: roundStart.Value,
-                    EndTime: time,
+                    ScoreCT: scoreCT, ScoreT: scoreT,
+                    StartTime: roundStart.Value, EndTime: time,
                     DurationSeconds: (time - roundStart.Value).TotalSeconds,
+                    MatchOffsetSeconds: (roundStart.Value - matchStart.Value).TotalSeconds,
                     Kills: new List<KillEvent>(roundKills)
                 ));
                 roundStart = null;
             }
         }
 
-        return (rounds, allKills);
+        return (rounds, allKills, allEvents);
     }
 
     // ── Step 5: Aggregate player stats ────────────────────────────────────────
@@ -198,14 +280,9 @@ public class CsgoLogParser
         {
             var (team, k, d, hs, weapons) = p.Value;
             return new PlayerStats(
-                Name: p.Key,
-                Team: team,
-                Kills: k,
-                Deaths: d,
-                Headshots: hs,
+                Name: p.Key, Team: team, Kills: k, Deaths: d, Headshots: hs,
                 HeadshotPercentage: k > 0 ? Math.Round((double)hs / k * 100, 1) : 0,
-                WeaponKills: weapons,
-                RoundsPlayed: totalRounds
+                WeaponKills: weapons, RoundsPlayed: totalRounds
             );
         }).OrderByDescending(p => p.Kills).ToList();
     }
@@ -216,10 +293,17 @@ public class CsgoLogParser
 
     private static string MapWinCondition(string sfui) => sfui switch
     {
-        "SFUI_Notice_CTs_Win"         => "Elimination",
-        "SFUI_Notice_Terrorists_Win"  => "Elimination",
-        "SFUI_Notice_Target_Bombed"   => "Bomb Exploded",
-        "SFUI_Notice_Bomb_Defused"    => "Bomb Defused",
-        _                             => sfui
+        "SFUI_Notice_CTs_Win"        => "Elimination",
+        "SFUI_Notice_Terrorists_Win" => "Elimination",
+        "SFUI_Notice_Target_Bombed"  => "Bomb Exploded",
+        "SFUI_Notice_Bomb_Defused"   => "Bomb Defused",
+        _                            => sfui
     };
+
+    private static string FriendlyItemName(string item) => item
+        .Replace("weapon_", "")
+        .Replace("item_assaultsuit", "Kevlar + Helmet")
+        .Replace("item_defuser", "Defuse Kit")
+        .Replace("_silencer", " (silenced)")
+        .Replace("_", " ");
 }

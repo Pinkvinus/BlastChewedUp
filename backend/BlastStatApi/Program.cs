@@ -11,7 +11,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Domain services – parser is stateless; service is a singleton cache
-builder.Services.AddSingleton<CsgoLogParser>();
+builder.Services.AddSingleton<CSLogParser>();
 builder.Services.AddSingleton<MatchService>();
 
 // Allow the React dev server to call this API
