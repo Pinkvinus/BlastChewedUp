@@ -9,9 +9,9 @@ public class CSLogParser
     private static readonly Regex TimestampPattern =
         new(@"^(\d{2}/\d{2}/\d{4} - \d{2}:\d{2}:\d{2}): (.*)$", RegexOptions.Compiled);
 
-    private static readonly Regex MatchStartPattern =
-        new(@"World triggered ""Match_Start"" on ""(.+)""", RegexOptions.Compiled);
-
+    private static readonly Regex WorldTriggerPattern =
+        new(@"World triggered ""(?<action>[^""]+)""(?: on ""(?<map>[^""]+)"")?", RegexOptions.Compiled);
+    
     private static readonly Regex TeamPlayingPattern =
         new(@"^Team playing ""(CT|TERRORIST)"": (.+)$", RegexOptions.Compiled);
 
@@ -79,16 +79,18 @@ public class CSLogParser
     private static int FindLastMatchStart(List<(DateTime, string Content)> entries)
     {
         int idx = -1;
-        for (int i = 0; i < entries.Count; i++)
-            if (MatchStartPattern.IsMatch(entries[i].Content))
-                idx = i;
+        for (int i = 0; i < entries.Count; i++){
+            var match = WorldTriggerPattern.Match(entries[i].Content);
+            if (!match.Success) continue;
+            if (match.Groups["action"].Value == "Match_Start") idx = i;
+        }
         return idx < 0 ? 0 : idx;
     }
 
     private static string ExtractMap(List<(DateTime, string Content)> entries, int idx)
     {
-        var m = MatchStartPattern.Match(entries[idx].Content);
-        return m.Success ? m.Groups[1].Value : "unknown";
+        var m = WorldTriggerPattern.Match(entries[idx].Content);
+        return m.Success ? m.Groups["map"].Value : "unknown";
     }
 
     // ── Step 3: Extract CT / T team names ─────────────────────────────────────
