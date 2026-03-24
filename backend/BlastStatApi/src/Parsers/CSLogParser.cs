@@ -53,7 +53,12 @@ public class CSLogParser
         var matchEntries = entries.Skip(lastMatchStartIndex).ToList();
 
         var (teamCT, teamT) = ExtractTeams(matchEntries);
-        var (rounds, kills, events) = ExtractAll(matchEntries, teamCT, teamT);
+        
+        // Seed matchStart from the Match_Start timestamp so purchases during
+        // the freeze time before Round 1's Round_Start are captured.
+        DateTime matchStartTime = entries[lastMatchStartIndex].Time;
+        var (rounds, kills, events) = ExtractAll(matchEntries, teamCT, teamT, matchStartTime);
+
         var playerStats = BuildPlayerStats(kills, rounds.Count);
 
         string map = ExtractMap(entries, lastMatchStartIndex);
@@ -109,13 +114,14 @@ public class CSLogParser
 
     // ── Step 4: Walk the log ───────────────────────────────────────────────────
     private static (List<Round> Rounds, List<KillEvent> Kills, List<MatchEvent> Events)
-        ExtractAll(List<(DateTime Time, string Content)> entries, TeamInfo teamCT, TeamInfo teamT)
+        ExtractAll(List<(DateTime Time, string Content)> entries, TeamInfo teamCT, TeamInfo teamT,
+                   DateTime seededMatchStart)
     {
         var rounds    = new List<Round>();
         var allKills  = new List<KillEvent>();
         var allEvents = new List<MatchEvent>();
 
-        DateTime? matchStart = null;
+        DateTime? matchStart = seededMatchStart;  // pre-seeded so pre-round-1 purchases are captured
         DateTime? roundStart = null;
         var roundKills = new List<KillEvent>();
         int roundNumber = 0;
@@ -147,8 +153,6 @@ public class CSLogParser
                 continue;
             }
 
-            if (!matchStart.HasValue || !roundStart.HasValue) continue;
-
             // ── Purchase ───────────────────────────────────────────────────────
             var purchaseMatch = PurchasePattern.Match(content);
             if (purchaseMatch.Success)
@@ -170,6 +174,8 @@ public class CSLogParser
                 ));
                 continue;
             }
+            if (!roundStart.HasValue) continue;
+
 
             // ── Kill ───────────────────────────────────────────────────────────
             var killMatch = KillPattern.Match(content);
