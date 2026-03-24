@@ -114,8 +114,8 @@ public class CSLogParser
 
     // ── Step 4: Walk the log ───────────────────────────────────────────────────
     private static (List<Round> Rounds, List<KillEvent> Kills, List<MatchEvent> Events)
-        ExtractAll(List<(DateTime Time, string Content)> entries, TeamInfo teamCT, TeamInfo teamT,
-                   DateTime seededMatchStart)
+    ExtractAll(List<(DateTime Time, string Content)> entries, TeamInfo teamCT, TeamInfo teamT,
+               DateTime seededMatchStart)
     {
         var rounds    = new List<Round>();
         var allKills  = new List<KillEvent>();
@@ -161,7 +161,7 @@ public class CSLogParser
                 int before      = int.Parse(purchaseMatch.Groups[3].Value);
                 int cost        = int.Parse(purchaseMatch.Groups[4].Value);
                 int after       = int.Parse(purchaseMatch.Groups[5].Value);
-                string friendly = FriendlyItemName(item);
+                string friendly = CleanItemName(item);
 
                 allEvents.Add(new MatchEvent(
                     MatchOffsetSeconds: offset(),
@@ -315,7 +315,7 @@ public class CSLogParser
         _                            => sfui
     };
 
-    private static string FriendlyItemName(string item) => item
+    private static string CleanItemName(string item) => item
         .Replace("weapon_", "")
         .Replace("item_assaultsuit", "Kevlar + Helmet")
         .Replace("item_defuser", "Defuse Kit")
