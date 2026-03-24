@@ -49,6 +49,9 @@ public class CSLogParser
         var lines = logContent.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         var entries = ParseTimestamps(lines);
 
+        // possible point of optimisation could be to build the match entried while parsing 
+        // timestamps to avoid multiple passes. However, this would make the code more complex
+        // 
         int lastMatchStartIndex = FindLastMatchStart(entries);
         var matchEntries = entries.Skip(lastMatchStartIndex).ToList();
 
