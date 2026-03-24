@@ -12,6 +12,9 @@ public class CSLogParser
     private static readonly Regex WorldTriggerPattern =
         new(@"World triggered ""(?<action>[^""]+)""(?: on ""(?<map>[^""]+)"")?", RegexOptions.Compiled);
     
+    private static readonly Regex AdminPattern =
+        new(@"^[^\]]*\]\s*(?<team1>.+?)\s*\[(?<score1>\d+)\s*-\s*(?<score2>\d+)\]\s*(?<team2>.+)$",
+            RegexOptions.Compiled);
     private static readonly Regex TeamPlayingPattern =
         new(@"^Team playing ""(CT|TERRORIST)"": (.+)$", RegexOptions.Compiled);
 
@@ -117,8 +120,10 @@ public class CSLogParser
         var roundKills = new List<KillEvent>();
         int roundNumber = 0;
 
-        foreach (var (time, content) in entries)
+        //foreach (var (time, content) in entries)
+        for (int i = 0; i < entries.Count; i++)
         {
+            var (time, content) = entries[i];
             double offset() => (time - matchStart!.Value).TotalSeconds;
 
             // ── Round start ────────────────────────────────────────────────────
@@ -231,8 +236,12 @@ public class CSLogParser
             {
                 string winnerSide   = winMatch.Groups[1].Value;
                 string winCondition = MapWinCondition(winMatch.Groups[2].Value);
-                int scoreCT = int.Parse(winMatch.Groups[3].Value);
-                int scoreT  = int.Parse(winMatch.Groups[4].Value);
+
+                var (_, adminContent) = entries[i+7]; // Admin log with final score usually appears 7 lines after round end
+                var adminMatch = AdminPattern.Match(adminContent);
+
+                int scoreCT = int.Parse(adminMatch.Groups["score2"].Value);
+                int scoreT  = int.Parse(adminMatch.Groups["score1"].Value);
 
                 rounds.Add(new Round(
                     Number: roundNumber,
