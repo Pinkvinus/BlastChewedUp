@@ -15,9 +15,6 @@ public class CSLogParser
     private static readonly Regex TeamPlayingPattern =
         new(@"^Team playing ""(CT|TERRORIST)"": (.+)$", RegexOptions.Compiled);
 
-    private static readonly Regex RoundStartPattern =
-        new(@"World triggered ""Round_Start""", RegexOptions.Compiled);
-
     private static readonly Regex TeamWinPattern =
         new(@"Team ""(CT|TERRORIST)"" triggered ""(SFUI_Notice_\w+)"" \(CT ""(\d+)""\) \(T ""(\d+)""\)",
             RegexOptions.Compiled);
@@ -125,7 +122,8 @@ public class CSLogParser
             double offset() => (time - matchStart!.Value).TotalSeconds;
 
             // ── Round start ────────────────────────────────────────────────────
-            if (RoundStartPattern.IsMatch(content))
+            var match = WorldTriggerPattern.Match(content);
+            if (match.Success && match.Groups["action"].Value == "Round_Start")
             {
                 matchStart ??= time;
                 roundStart = time;
