@@ -30,7 +30,7 @@ export default function App() {
   return (
     <div className="app">
       <nav className="app-nav">
-        <span className="app-nav__logo">BLAST<span>STATS</span></span>
+        <span className="app-nav__logo">CHEWED<span>UP</span></span>
         <div className="app-nav__tabs">
           <button
             className={`app-nav__tab ${view === 'playbyplay' ? 'app-nav__tab--active' : ''}`}
