@@ -374,6 +374,7 @@ body {
 .pbp__event--latest { animation: fadeIn 0.2s ease; }
  
 .pbp__event-icon { font-size: 1rem; flex-shrink: 0; }
+.pbp__icon { width: 1.2em; height: 1.2em; vertical-align: middle; filter: invert(1); }
 .pbp__event-sep  { color: var(--muted); font-size: 0.8rem; }
 .pbp__event-text { font-weight: 600; }
  

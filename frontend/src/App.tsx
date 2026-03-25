@@ -3,9 +3,7 @@ import { useQuery } from './hooks/useQuery';
 import { api } from './api/matchApi';
 import { ScoreHeader } from './components/scoreHeader';
 import { PlayerTable } from './components/playerTable';
-import { RoundTimeline } from './components/roundTimeline';
 import { ScorelineChart } from './components/scorelineChart';
-import { WeaponBreakdown } from './components/weaponBreakdown';
 import { PlayByPlay } from './components/playByPlay';
 
 type View = 'playbyplay' | 'stats';
@@ -68,12 +66,6 @@ export default function App() {
             </div>
             <div className="col col--wide">
               <PlayerTable players={players.data!} teamCT={teamCT} teamT={teamT} />
-            </div>
-            <div className="col col--half">
-              <RoundTimeline rounds={rounds.data!} teamCT={teamCT} teamT={teamT} />
-            </div>
-            <div className="col col--half">
-              <WeaponBreakdown players={players.data!} teamCT={teamCT} />
             </div>
           </main>
         </>
