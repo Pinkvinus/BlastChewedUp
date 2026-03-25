@@ -122,6 +122,20 @@ function EventRow({ ev, teamCT, isLatest }: { ev: MatchEvent; teamCT: string; is
         </div>
       );
 
+    case 'round_end': {
+      const [winner, condition] = (ev.detail ?? '|').split('|');
+      const winnerIsCT = winner === teamCT;
+      return (
+        <div className={`pbp__event pbp__event--round-end ${winnerIsCT ? 'pbp__event--round-end-ct' : 'pbp__event--round-end-t'}`}>
+          <span className="pbp__event-icon">{BELL}</span>
+          <span className={`pbp__round-end-winner ${winnerIsCT ? 'pbp__name--ct' : 'pbp__name--t'}`}>
+            {winner} wins
+          </span>
+          <span className="pbp__event-sep">— {condition}</span>
+        </div>
+      );
+    }
+
     default:
       return null;
   }
@@ -167,8 +181,21 @@ export function PlayByPlay({
     e.eventType === 'round_start' && e.matchOffsetSeconds <= currentTime
   );
 
+  // Synthesise round_end events from completed rounds
+  const roundEndEvents: MatchEvent[] = rounds
+    .filter(r => r.matchOffsetSeconds + r.durationSeconds <= currentTime)
+    .map(r => ({
+      matchOffsetSeconds: r.matchOffsetSeconds + r.durationSeconds,
+      roundNumber: r.number,
+      eventType: 'round_end',
+      playerName: '',
+      playerTeam: r.winnerSide,
+      detail: `${r.winnerSide}|${r.winCondition}`,
+      headshot: false,
+    }));
+
   // Merge and sort for display
-  const feedItems = [...visibleEvents, ...visibleRoundStarts]
+  const feedItems = [...visibleEvents, ...visibleRoundStarts, ...roundEndEvents]
     .sort((a, b) => a.matchOffsetSeconds - b.matchOffsetSeconds);
 
   // Live score

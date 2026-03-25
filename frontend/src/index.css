@@ -386,6 +386,16 @@ body {
   text-transform: uppercase; width: 100%;
   border-left: 3px solid var(--border);
 }
+.pbp__event--round-end {
+  background: var(--surface-2);
+  border-radius: 3px; padding: 4px 10px;
+  font-family: var(--font-display);
+  font-size: 0.8rem; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; width: 100%;
+}
+.pbp__event--round-end-ct { border-left: 3px solid var(--ct); }
+.pbp__event--round-end-t  { border-left: 3px solid var(--t); }
+.pbp__round-end-winner { font-weight: 700; }
 .pbp__event--bomb   { color: var(--t); }
 .pbp__event--defuse { color: var(--ct); }
 .pbp__event--util   { opacity: 0.75; }
