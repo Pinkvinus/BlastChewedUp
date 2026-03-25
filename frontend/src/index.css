@@ -432,6 +432,9 @@ body {
   padding: 5px 12px; cursor: pointer; letter-spacing: 0.04em;
   transition: color 0.15s, border-color 0.15s;
 }
+.pbp__filter .pbp__icon { opacity: 0.4; transition: opacity 0.15s; }
+.pbp__filter:hover .pbp__icon { opacity: 0.7; }
+.pbp__filter--active .pbp__icon { opacity: 1; }
 .pbp__filter:hover { color: var(--text); border-color: var(--text); }
 .pbp__filter--active { color: var(--text); border-color: var(--text); background: var(--surface-2); }
  
