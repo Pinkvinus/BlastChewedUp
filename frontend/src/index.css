@@ -8,6 +8,7 @@
   --border:    #4d3d48;
   --text:      #e9e7e8;
   --muted:     #8d858c;
+  --muted-2:   #51424d;
 
   --ct:        #4a9eff;
   --ct-dim:    rgba(74, 158, 255, 0.15);
@@ -19,6 +20,7 @@
   --highlight: #fffe3e;
 
   --radius:    6px;
+  --btn_radius: 15px;
   --font-display: 'Barlow Condensed', sans-serif;
   --font-body:    TT Norms Pro,sans-serif;
 }
@@ -285,7 +287,7 @@ body {
 .pbp__round-marker--t  { background: var(--t);  opacity: 0.7; }
  
 .pbp__scrubber {
-  width: 100%; accent-color: var(--ct); cursor: pointer;
+  width: 100%; accent-color: var(--highlight); cursor: pointer;
   height: 4px;
 }
 .pbp__time-labels {
@@ -296,23 +298,38 @@ body {
  
 /* Controls */
 .pbp__controls {
-  display: flex; align-items: center; justify-content: center; gap: 10px;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
 }
 .pbp__btn {
   background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: var(--radius); color: var(--text); cursor: pointer;
+   color: var(--text); cursor: pointer;
   font-family: var(--font-display); font-size: 0.9rem; font-weight: 600;
   padding: 8px 18px; letter-spacing: 0.05em;
   transition: border-color 0.15s, color 0.15s;
 }
 .pbp__btn:hover { border-color: var(--ct); color: var(--ct); }
 .pbp__btn--primary {
-  background: var(--ct-dim); border-color: var(--ct); color: var(--ct);
+  background: var(--surface-2); border-color: var(--highlight); color: var(--text);
   min-width: 110px;
+  max-height: 36px;
 }
-.pbp__btn--primary:hover { background: var(--ct); color: var(--bg); }
-.pbp__btn--end { margin-left: 16px; color: var(--muted); font-size: 0.8rem; }
+.pbp__btn--primary:hover { background: var(--highlight); color: var(--bg); border-color: var(--highlight);}
  
+.pbp__btn--left {
+  border-top-left-radius: var(--btn_radius);
+  border-bottom-left-radius: var(--btn_radius);
+}
+.pbp__btn--right {
+  border-top-right-radius: var(--btn_radius);
+  border-bottom-right-radius: var(--btn_radius);
+}
+.pbp__btn--skip {
+  border-radius: var(--btn_radius);
+  width: 32px;
+  height: 32px;
+  padding: 4px 5px; /* Adjust for icon size */
+}
+
 /* Kill feed */
 .pbp__feed {
   background: var(--surface); border: 1px solid var(--border);
@@ -402,21 +419,21 @@ body {
  
 /* ── Controls group ──────────────────────────────────────────────────────────── */
 .pbp__controls { justify-content: space-between; }
-.pbp__controls-group { display: flex; align-items: center; gap: 6px; }
+.pbp__controls-group { display: flex; align-items: center; gap: 3px; }
  
 /* ── Filter tabs ─────────────────────────────────────────────────────────────── */
 .pbp__filters {
-  display: flex; gap: 6px; flex-wrap: wrap;
+  display: flex; gap: 4px; flex-wrap: wrap;
 }
 .pbp__filter {
-  background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: var(--radius); color: var(--muted);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--btn_radius); color: var(--muted-2);
   font-family: var(--font-display); font-size: 0.8rem; font-weight: 600;
   padding: 5px 12px; cursor: pointer; letter-spacing: 0.04em;
   transition: color 0.15s, border-color 0.15s;
 }
-.pbp__filter:hover { color: var(--text); border-color: var(--muted); }
-.pbp__filter--active { color: var(--ct); border-color: var(--ct); background: var(--ct-dim); }
+.pbp__filter:hover { color: var(--text); border-color: var(--text); }
+.pbp__filter--active { color: var(--text); border-color: var(--text); background: var(--surface-2); }
  
 /* ── Purchase event ──────────────────────────────────────────────────────────── */
 .pbp__event--purchase { opacity: 0.85; }

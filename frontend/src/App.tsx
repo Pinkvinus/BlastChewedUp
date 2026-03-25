@@ -36,13 +36,13 @@ export default function App() {
             className={`app-nav__tab ${view === 'playbyplay' ? 'app-nav__tab--active' : ''}`}
             onClick={() => setView('playbyplay')}
           >
-            ▶ Play-by-Play
+            ▶ Play by Play
           </button>
           <button
             className={`app-nav__tab ${view === 'stats' ? 'app-nav__tab--active' : ''}`}
             onClick={() => setView('stats')}
           >
-            📊 Match Stats
+            Match Stats
           </button>
         </div>
       </nav>

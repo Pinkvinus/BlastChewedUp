@@ -323,33 +323,30 @@ export function PlayByPlay({
         </div>
       </div>
 
-      {/* ── Controls ── */}
       <div className="pbp__controls">
+        {/* ── Controls ── */}
         <div className="pbp__controls-group">
-          <button className="pbp__btn" onClick={skipToPrevRound} title="Previous round">⏮ Round</button>
-          <button className="pbp__btn" onClick={stepBack}        title="Previous event">◀ Event</button>
+          <button className="pbp__btn pbp__btn--skip" onClick={skipToPrevRound} title="Previous round">⏮</button>
+          <button className="pbp__btn pbp__btn--left" onClick={stepBack}        title="Previous event">◀</button>
           <button className="pbp__btn pbp__btn--primary" onClick={() => setIsPlaying(p => !p)}>
-            {isPlaying ? '⏸ Pause' : '▶ Play'}
+            {isPlaying ? '⏸' : '▶'}
           </button>
-          <button className="pbp__btn" onClick={stepForward}    title="Next event">Event ▶</button>
-          <button className="pbp__btn" onClick={skipToNextRound} title="Next round">Round ⏭</button>
+          <button className="pbp__btn pbp__btn--right" onClick={stepForward}    title="Next event">▶</button>
+          <button className="pbp__btn pbp__btn--skip" onClick={skipToNextRound} title="Next round">⏭</button>
         </div>
-        <button className="pbp__btn pbp__btn--end" onClick={() => { setCurrentTime(totalDuration); onMatchEnd(); }}>
-          Skip to stats →
-        </button>
-      </div>
 
-      {/* ── Filter tabs ── */}
-      <div className="pbp__filters">
-        {FILTERS.map(f => (
-          <button
-            key={f.key}
-            className={`pbp__filter ${filter === f.key ? 'pbp__filter--active' : ''}`}
-            onClick={() => setFilter(f.key)}
-          >
-            {f.label}
-          </button>
-        ))}
+       {/* ── Filter tabs ── */}
+        <div className="pbp__filters">
+          {FILTERS.map(f => (
+            <button
+              key={f.key}
+              className={`pbp__filter ${filter === f.key ? 'pbp__filter--active' : ''}`}
+              onClick={() => setFilter(f.key)}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── Event feed ── */}
