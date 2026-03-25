@@ -366,28 +366,6 @@ export function PlayByPlay({
           </div>
         ))}
       </div>
-
-      {/* ── Completed round pills ── */}
-      <div className="pbp__mini-scores">
-        {scoreline
-          .filter(s => {
-            const r = rounds.find(r => r.number === s.round);
-            return r && r.matchOffsetSeconds + r.durationSeconds <= currentTime;
-          })
-          .map(s => (
-            <div
-              key={s.round}
-              className={`pbp__mini-round ${s.winner === teamCT ? 'pbp__mini-round--ct' : 'pbp__mini-round--t'}`}
-              title={`R${s.round}: ${s.winner} (${s.winCondition}) ${s.scoreCT}–${s.scoreT}`}
-              onClick={() => {
-                const r = rounds.find(r => r.number === s.round);
-                if (r) { setIsPlaying(false); setCurrentTime(r.matchOffsetSeconds); }
-              }}
-            >
-              {s.round}
-            </div>
-          ))}
-      </div>
     </div>
   );
 }
