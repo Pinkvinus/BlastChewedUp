@@ -53,9 +53,9 @@ export function ScorelineChart({ scoreline, teamCT, teamT }: Props) {
         ))}
 
         {/* Halftime divider */}
-        {rounds > 12 && (
+        {rounds > 15 && (
           <line
-            x1={xScale(11)} x2={xScale(11)}
+            x1={xScale(14.5)} x2={xScale(14.5)}
             y1={PAD.top} y2={H - PAD.bottom}
             className="halftime-line"
           />

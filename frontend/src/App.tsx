@@ -3,9 +3,7 @@ import { useQuery } from './hooks/useQuery';
 import { api } from './api/matchApi';
 import { ScoreHeader } from './components/scoreHeader';
 import { PlayerTable } from './components/playerTable';
-import { RoundTimeline } from './components/roundTimeline';
 import { ScorelineChart } from './components/scorelineChart';
-import { WeaponBreakdown } from './components/weaponBreakdown';
 import { PlayByPlay } from './components/playByPlay';
 
 type View = 'playbyplay' | 'stats';
@@ -32,19 +30,19 @@ export default function App() {
   return (
     <div className="app">
       <nav className="app-nav">
-        <span className="app-nav__logo">BLAST<span>STATS</span></span>
+        <span className="app-nav__logo">CHEWED<span>UP</span></span>
         <div className="app-nav__tabs">
           <button
             className={`app-nav__tab ${view === 'playbyplay' ? 'app-nav__tab--active' : ''}`}
             onClick={() => setView('playbyplay')}
           >
-            ▶ Play-by-Play
+            ▶ Play by Play
           </button>
           <button
             className={`app-nav__tab ${view === 'stats' ? 'app-nav__tab--active' : ''}`}
             onClick={() => setView('stats')}
           >
-            📊 Match Stats
+            Match Stats
           </button>
         </div>
       </nav>
@@ -68,12 +66,6 @@ export default function App() {
             </div>
             <div className="col col--wide">
               <PlayerTable players={players.data!} teamCT={teamCT} teamT={teamT} />
-            </div>
-            <div className="col col--half">
-              <RoundTimeline rounds={rounds.data!} teamCT={teamCT} teamT={teamT} />
-            </div>
-            <div className="col col--half">
-              <WeaponBreakdown players={players.data!} teamCT={teamCT} />
             </div>
           </main>
         </>

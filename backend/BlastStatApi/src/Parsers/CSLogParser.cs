@@ -9,14 +9,14 @@ public class CSLogParser
     private static readonly Regex TimestampPattern =
         new(@"^(\d{2}/\d{2}/\d{4} - \d{2}:\d{2}:\d{2}): (.*)$", RegexOptions.Compiled);
 
-    private static readonly Regex MatchStartPattern =
-        new(@"World triggered ""Match_Start"" on ""(.+)""", RegexOptions.Compiled);
-
+    private static readonly Regex WorldTriggerPattern =
+        new(@"World triggered ""(?<action>[^""]+)""(?: on ""(?<map>[^""]+)"")?", RegexOptions.Compiled);
+    
+    private static readonly Regex AdminPattern =
+        new(@"^[^\]]*\]\s*(?<team1>.+?)\s*\[(?<score1>\d+)\s*-\s*(?<score2>\d+)\]\s*(?<team2>.+)$",
+            RegexOptions.Compiled);
     private static readonly Regex TeamPlayingPattern =
         new(@"^Team playing ""(CT|TERRORIST)"": (.+)$", RegexOptions.Compiled);
-
-    private static readonly Regex RoundStartPattern =
-        new(@"World triggered ""Round_Start""", RegexOptions.Compiled);
 
     private static readonly Regex TeamWinPattern =
         new(@"Team ""(CT|TERRORIST)"" triggered ""(SFUI_Notice_\w+)"" \(CT ""(\d+)""\) \(T ""(\d+)""\)",
@@ -49,11 +49,19 @@ public class CSLogParser
         var lines = logContent.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         var entries = ParseTimestamps(lines);
 
+        // possible point of optimisation could be to build the match entried while parsing 
+        // timestamps to avoid multiple passes. However, this would make the code more complex
+        // 
         int lastMatchStartIndex = FindLastMatchStart(entries);
         var matchEntries = entries.Skip(lastMatchStartIndex).ToList();
 
         var (teamCT, teamT) = ExtractTeams(matchEntries);
-        var (rounds, kills, events) = ExtractAll(matchEntries, teamCT, teamT);
+        
+        // Seed matchStart from the Match_Start timestamp so purchases during
+        // the freeze time before Round 1's Round_Start are captured.
+        DateTime matchStartTime = entries[lastMatchStartIndex].Time;
+        var (rounds, kills, events) = ExtractAll(matchEntries, teamCT, teamT, matchStartTime);
+
         var playerStats = BuildPlayerStats(kills, rounds.Count);
 
         string map = ExtractMap(entries, lastMatchStartIndex);
@@ -79,16 +87,18 @@ public class CSLogParser
     private static int FindLastMatchStart(List<(DateTime, string Content)> entries)
     {
         int idx = -1;
-        for (int i = 0; i < entries.Count; i++)
-            if (MatchStartPattern.IsMatch(entries[i].Content))
-                idx = i;
+        for (int i = 0; i < entries.Count; i++){
+            var match = WorldTriggerPattern.Match(entries[i].Content);
+            if (!match.Success) continue;
+            if (match.Groups["action"].Value == "Match_Start") idx = i;
+        }
         return idx < 0 ? 0 : idx;
     }
 
     private static string ExtractMap(List<(DateTime, string Content)> entries, int idx)
     {
-        var m = MatchStartPattern.Match(entries[idx].Content);
-        return m.Success ? m.Groups[1].Value : "unknown";
+        var m = WorldTriggerPattern.Match(entries[idx].Content);
+        return m.Success ? m.Groups["map"].Value : "unknown";
     }
 
     // ── Step 3: Extract CT / T team names ─────────────────────────────────────
@@ -107,23 +117,27 @@ public class CSLogParser
 
     // ── Step 4: Walk the log ───────────────────────────────────────────────────
     private static (List<Round> Rounds, List<KillEvent> Kills, List<MatchEvent> Events)
-        ExtractAll(List<(DateTime Time, string Content)> entries, TeamInfo teamCT, TeamInfo teamT)
+    ExtractAll(List<(DateTime Time, string Content)> entries, TeamInfo teamCT, TeamInfo teamT,
+               DateTime seededMatchStart)
     {
         var rounds    = new List<Round>();
         var allKills  = new List<KillEvent>();
         var allEvents = new List<MatchEvent>();
 
-        DateTime? matchStart = null;
+        DateTime? matchStart = seededMatchStart;  // pre-seeded so pre-round-1 purchases are captured
         DateTime? roundStart = null;
         var roundKills = new List<KillEvent>();
         int roundNumber = 0;
 
-        foreach (var (time, content) in entries)
+        //foreach (var (time, content) in entries)
+        for (int i = 0; i < entries.Count; i++)
         {
+            var (time, content) = entries[i];
             double offset() => (time - matchStart!.Value).TotalSeconds;
 
             // ── Round start ────────────────────────────────────────────────────
-            if (RoundStartPattern.IsMatch(content))
+            var match = WorldTriggerPattern.Match(content);
+            if (match.Success && match.Groups["action"].Value == "Round_Start")
             {
                 matchStart ??= time;
                 roundStart = time;
@@ -142,8 +156,6 @@ public class CSLogParser
                 continue;
             }
 
-            if (!matchStart.HasValue || !roundStart.HasValue) continue;
-
             // ── Purchase ───────────────────────────────────────────────────────
             var purchaseMatch = PurchasePattern.Match(content);
             if (purchaseMatch.Success)
@@ -152,7 +164,7 @@ public class CSLogParser
                 int before      = int.Parse(purchaseMatch.Groups[3].Value);
                 int cost        = int.Parse(purchaseMatch.Groups[4].Value);
                 int after       = int.Parse(purchaseMatch.Groups[5].Value);
-                string friendly = FriendlyItemName(item);
+                string friendly = CleanItemName(item);
 
                 allEvents.Add(new MatchEvent(
                     MatchOffsetSeconds: offset(),
@@ -165,6 +177,8 @@ public class CSLogParser
                 ));
                 continue;
             }
+            if (!roundStart.HasValue) continue;
+
 
             // ── Kill ───────────────────────────────────────────────────────────
             var killMatch = KillPattern.Match(content);
@@ -231,8 +245,12 @@ public class CSLogParser
             {
                 string winnerSide   = winMatch.Groups[1].Value;
                 string winCondition = MapWinCondition(winMatch.Groups[2].Value);
-                int scoreCT = int.Parse(winMatch.Groups[3].Value);
-                int scoreT  = int.Parse(winMatch.Groups[4].Value);
+
+                var (_, adminContent) = entries[i+7]; // Admin log with final score usually appears 7 lines after round end
+                var adminMatch = AdminPattern.Match(adminContent);
+
+                int scoreCT = int.Parse(adminMatch.Groups["score2"].Value);
+                int scoreT  = int.Parse(adminMatch.Groups["score1"].Value);
 
                 rounds.Add(new Round(
                     Number: roundNumber,
@@ -300,7 +318,7 @@ public class CSLogParser
         _                            => sfui
     };
 
-    private static string FriendlyItemName(string item) => item
+    private static string CleanItemName(string item) => item
         .Replace("weapon_", "")
         .Replace("item_assaultsuit", "Kevlar + Helmet")
         .Replace("item_defuser", "Defuse Kit")

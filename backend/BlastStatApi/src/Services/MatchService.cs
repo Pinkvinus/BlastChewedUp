@@ -3,11 +3,6 @@ using BlastStatApi.Parsers;
 
 namespace BlastStatApi.Services;
 
-/// <summary>
-/// Reads the log file from disk once and caches the parsed result.
-/// In a real deployment this would be replaced with a repository pattern
-/// backed by a database populated by an import pipeline.
-/// </summary>
 public class MatchService
 {
     private readonly CSLogParser _parser;

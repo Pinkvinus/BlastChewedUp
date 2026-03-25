@@ -12,29 +12,45 @@ interface Props {
 }
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
-const UTIL_ICONS: Record<string, string> = {
-  smokegrenade: '💨', flashbang: '⚡',
-  hegrenade: '💣', molotov: '🔥', incgrenade: '🔥',
+function Icon({ src, alt }: { src: string; alt: string }) {
+  return <img src={src} alt={alt} className="pbp__icon" />;
+}
+
+const BULLET = <Icon src="/bullet-svgrepo-com.svg" alt="bullet" />;
+const GRENADE = <Icon src="/grenade-svgrepo-com.svg" alt="grenade" />;
+const MOLOTOV = <Icon src="/molotov-cocktail-svgrepo-com.svg" alt="molotov" />;
+const MONEY = <Icon src="/money-svgrepo-com.svg" alt="money" />;
+const KNIFE = <Icon src="/knife-war-svgrepo-com.svg" alt="knife" />;
+const KEVLAR = <Icon src="/bulletproof-vest-svgrepo-com.svg" alt="kevlar" />;
+const BOMB = <Icon src="/bomb-svgrepo-com.svg" alt="bomb" />;
+const DEFUSE_KIT = <Icon src="/noun-battery-jumper-54665.svg" alt="defuse kit" />;
+const DEFUSE = <Icon src="/noun-defuse-6557048.svg" alt="defuse" />;
+const HEADSHOT = <Icon src="/aim-sniper-svgrepo-com.svg" alt="headshot" />;
+const BELL = <Icon src="/bell-svgrepo-com.svg" alt="round" />;
+
+const UTIL_ICONS: Record<string, React.ReactNode> = {
+  smokegrenade: GRENADE, flashbang: GRENADE,
+  hegrenade: GRENADE, molotov: MOLOTOV, incgrenade: MOLOTOV,
 };
 
-const WEAPON_ICONS: Record<string, string> = {
-  awp: '🎯', ssg08: '🎯', g3sg1: '🎯', scar20: '🎯',
-  knife: '🔪', knife_outdoor: '🔪', knife_butterfly: '🔪',
-  knife_flip: '🔪', knife_m9_bayonet: '🔪', bayonet: '🔪',
-  hegrenade: '💣', molotov: '🔥', inferno: '🔥',
+const WEAPON_ICONS: Record<string, React.ReactNode> = {
+  awp: BULLET, ssg08: BULLET, g3sg1: BULLET, scar20: BULLET,
+  knife: KNIFE, knife_outdoor: KNIFE, knife_butterfly: KNIFE,
+  knife_flip: KNIFE, knife_m9_bayonet: KNIFE, bayonet: KNIFE,
+  hegrenade: GRENADE, molotov: MOLOTOV, inferno: MOLOTOV,
 };
 
-const ITEM_ICONS: Record<string, string> = {
-  'Kevlar + Helmet': '🪖', 'Defuse Kit': '🔧',
-  ak47: '🔫', m4a1: '🔫', awp: '🎯',
-  smokegrenade: '💨', flashbang: '⚡', hegrenade: '💣',
-  molotov: '🔥', incgrenade: '🔥',
+const ITEM_ICONS: Record<string, React.ReactNode> = {
+  'Kevlar + Helmet': KEVLAR, 'Defuse Kit': DEFUSE_KIT,
+  ak47: BULLET, m4a1: BULLET, awp: BULLET,
+  smokegrenade: GRENADE, flashbang: GRENADE, hegrenade: GRENADE,
+  molotov: MOLOTOV, incgrenade: MOLOTOV,
 };
 
-function weaponIcon(w: string) { return WEAPON_ICONS[w.toLowerCase()] ?? '🔫'; }
+function weaponIcon(w: string) { return WEAPON_ICONS[w.toLowerCase()] ?? BULLET; }
 function itemIcon(name: string) {
   const key = Object.keys(ITEM_ICONS).find(k => name.toLowerCase().includes(k));
-  return key ? ITEM_ICONS[key] : '💰';
+  return key ? ITEM_ICONS[key] : MONEY;
 }
 
 // ── Event row renderer ─────────────────────────────────────────────────────────
@@ -47,7 +63,7 @@ function EventRow({ ev, teamCT, isLatest }: { ev: MatchEvent; teamCT: string; is
     case 'round_start':
       return (
         <div className={`pbp__event pbp__event--round-start`}>
-          <span className="pbp__event-icon">🔔</span>
+          <span className="pbp__event-icon">{BELL}</span>
           <span className="pbp__event-text">{ev.detail}</span>
         </div>
       );
@@ -59,7 +75,7 @@ function EventRow({ ev, teamCT, isLatest }: { ev: MatchEvent; teamCT: string; is
         <div className={`pbp__event pbp__event--kill ${latestClass}`}>
           <span className="pbp__event-icon">{weaponIcon(weapon)}</span>
           <span className={nameClass}>{ev.playerName}</span>
-          <span className="pbp__event-sep">{weapon}{ev.headshot ? ' 💥' : ''}</span>
+          <span className="pbp__event-sep">{weapon}{ev.headshot ? <> {HEADSHOT}</> : ''}</span>
           <span className={victimIsCT ? 'pbp__name--ct' : 'pbp__name--t'}>{victimName}</span>
         </div>
       );
@@ -69,7 +85,7 @@ function EventRow({ ev, teamCT, isLatest }: { ev: MatchEvent; teamCT: string; is
       const [item, cost, , after] = (ev.detail ?? '|||').split('|');
       return (
         <div className={`pbp__event pbp__event--purchase ${latestClass}`}>
-          <span className="pbp__event-icon">{itemIcon(item)}</span>
+          <span className="pbp__event-icon">{MONEY}</span>
           <span className={nameClass}>{ev.playerName}</span>
           <span className="pbp__event-sep">bought</span>
           <span className="pbp__purchase-item">{item}</span>
@@ -91,7 +107,7 @@ function EventRow({ ev, teamCT, isLatest }: { ev: MatchEvent; teamCT: string; is
     case 'bomb_plant':
       return (
         <div className={`pbp__event pbp__event--bomb ${latestClass}`}>
-          <span className="pbp__event-icon">💣</span>
+          <span className="pbp__event-icon">{BOMB}</span>
           <span className={nameClass}>{ev.playerName}</span>
           <span className="pbp__event-sep">planted at {ev.detail}</span>
         </div>
@@ -100,11 +116,25 @@ function EventRow({ ev, teamCT, isLatest }: { ev: MatchEvent; teamCT: string; is
     case 'bomb_defuse':
       return (
         <div className={`pbp__event pbp__event--defuse ${latestClass}`}>
-          <span className="pbp__event-icon">🛡️</span>
+          <span className="pbp__event-icon">{DEFUSE}</span>
           <span className={nameClass}>{ev.playerName}</span>
           <span className="pbp__event-sep">defused the bomb</span>
         </div>
       );
+
+    case 'round_end': {
+      const [winner, condition] = (ev.detail ?? '|').split('|');
+      const winnerIsCT = winner === teamCT;
+      return (
+        <div className={`pbp__event pbp__event--round-end ${winnerIsCT ? 'pbp__event--round-end-ct' : 'pbp__event--round-end-t'}`}>
+          <span className="pbp__event-icon">{BELL}</span>
+          <span className={`pbp__round-end-winner ${winnerIsCT ? 'pbp__name--ct' : 'pbp__name--t'}`}>
+            {winner} wins
+          </span>
+          <span className="pbp__event-sep">— {condition}</span>
+        </div>
+      );
+    }
 
     default:
       return null;
@@ -113,12 +143,12 @@ function EventRow({ ev, teamCT, isLatest }: { ev: MatchEvent; teamCT: string; is
 
 // ── Event type filter options ──────────────────────────────────────────────────
 type FilterKey = 'all' | 'kill' | 'purchase' | 'util' | 'bomb';
-const FILTERS: { key: FilterKey; label: string }[] = [
+const FILTERS: { key: FilterKey; label: React.ReactNode }[] = [
   { key: 'all',      label: 'All'      },
-  { key: 'kill',     label: '🔫 Kills'  },
-  { key: 'purchase', label: '💰 Buys'   },
-  { key: 'util',     label: '💨 Util'   },
-  { key: 'bomb',     label: '💣 Bomb'   },
+  { key: 'kill',     label: <>{BULLET} Kills</>  },
+  { key: 'purchase', label: <>{MONEY} Buys</>   },
+  { key: 'util',     label: <>{GRENADE} Util</>   },
+  { key: 'bomb',     label: <>{BOMB} Bomb</>   },
 ];
 
 function matchesFilter(ev: MatchEvent, filter: FilterKey) {
@@ -151,8 +181,21 @@ export function PlayByPlay({
     e.eventType === 'round_start' && e.matchOffsetSeconds <= currentTime
   );
 
+  // Synthesise round_end events from completed rounds
+  const roundEndEvents: MatchEvent[] = rounds
+    .filter(r => r.matchOffsetSeconds + r.durationSeconds <= currentTime)
+    .map(r => ({
+      matchOffsetSeconds: r.matchOffsetSeconds + r.durationSeconds,
+      roundNumber: r.number,
+      eventType: 'round_end',
+      playerName: '',
+      playerTeam: r.winnerSide,
+      detail: `${r.winnerSide}|${r.winCondition}`,
+      headshot: false,
+    }));
+
   // Merge and sort for display
-  const feedItems = [...visibleEvents, ...visibleRoundStarts]
+  const feedItems = [...visibleEvents, ...visibleRoundStarts, ...roundEndEvents]
     .sort((a, b) => a.matchOffsetSeconds - b.matchOffsetSeconds);
 
   // Live score
@@ -280,33 +323,30 @@ export function PlayByPlay({
         </div>
       </div>
 
-      {/* ── Controls ── */}
       <div className="pbp__controls">
+        {/* ── Controls ── */}
         <div className="pbp__controls-group">
-          <button className="pbp__btn" onClick={skipToPrevRound} title="Previous round">⏮ Round</button>
-          <button className="pbp__btn" onClick={stepBack}        title="Previous event">◀ Event</button>
+          <button className="pbp__btn pbp__btn--skip" onClick={skipToPrevRound} title="Previous round">⏮</button>
+          <button className="pbp__btn pbp__btn--left" onClick={stepBack}        title="Previous event">◀</button>
           <button className="pbp__btn pbp__btn--primary" onClick={() => setIsPlaying(p => !p)}>
-            {isPlaying ? '⏸ Pause' : '▶ Play'}
+            {isPlaying ? '⏸' : '▶'}
           </button>
-          <button className="pbp__btn" onClick={stepForward}    title="Next event">Event ▶</button>
-          <button className="pbp__btn" onClick={skipToNextRound} title="Next round">Round ⏭</button>
+          <button className="pbp__btn pbp__btn--right" onClick={stepForward}    title="Next event">▶</button>
+          <button className="pbp__btn pbp__btn--skip" onClick={skipToNextRound} title="Next round">⏭</button>
         </div>
-        <button className="pbp__btn pbp__btn--end" onClick={() => { setCurrentTime(totalDuration); onMatchEnd(); }}>
-          Skip to stats →
-        </button>
-      </div>
 
-      {/* ── Filter tabs ── */}
-      <div className="pbp__filters">
-        {FILTERS.map(f => (
-          <button
-            key={f.key}
-            className={`pbp__filter ${filter === f.key ? 'pbp__filter--active' : ''}`}
-            onClick={() => setFilter(f.key)}
-          >
-            {f.label}
-          </button>
-        ))}
+       {/* ── Filter tabs ── */}
+        <div className="pbp__filters">
+          {FILTERS.map(f => (
+            <button
+              key={f.key}
+              className={`pbp__filter ${filter === f.key ? 'pbp__filter--active' : ''}`}
+              onClick={() => setFilter(f.key)}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── Event feed ── */}
@@ -322,28 +362,6 @@ export function PlayByPlay({
             <EventRow ev={ev} teamCT={teamCT} isLatest={i === feedItems.length - 1} />
           </div>
         ))}
-      </div>
-
-      {/* ── Completed round pills ── */}
-      <div className="pbp__mini-scores">
-        {scoreline
-          .filter(s => {
-            const r = rounds.find(r => r.number === s.round);
-            return r && r.matchOffsetSeconds + r.durationSeconds <= currentTime;
-          })
-          .map(s => (
-            <div
-              key={s.round}
-              className={`pbp__mini-round ${s.winner === teamCT ? 'pbp__mini-round--ct' : 'pbp__mini-round--t'}`}
-              title={`R${s.round}: ${s.winner} (${s.winCondition}) ${s.scoreCT}–${s.scoreT}`}
-              onClick={() => {
-                const r = rounds.find(r => r.number === s.round);
-                if (r) { setIsPlaying(false); setCurrentTime(r.matchOffsetSeconds); }
-              }}
-            >
-              {s.round}
-            </div>
-          ))}
       </div>
     </div>
   );
