@@ -1,12 +1,20 @@
 # Blast Chewed Up Code Challenge
+This is my submission to the Blast Chewed Up Code Challenge. This repository contains the frontend and the backend to display a Counter Strike match read from a match log.
 
+## Design/styling
 
+The styling of the page is loosely based on the [blast.tv](https://blast.tv/cs) webpage.
+
+<div style="display: flex; gap: 10px; align-items: flex-start;">
+  <img src="./img/Play_by_play-v1.0.png" style="max-width: 50%; height: auto;">
+  <img src="./img/Match_stats1-v1.0.png" style="max-width: 50%; height: auto;">
+</div>
 
 ## Tech Stack
 
 | Layer    | Technology                          |
 |----------|-------------------------------------|
-| Backend  | C# - ASP.NET Core 10 - Web API         |
+| Backend  | C# - ASP.NET Core 10 - Web API      |
 | Frontend | React - TypeScript - Vite           |
 | Styling  | CSS                                 |
 
@@ -16,7 +24,7 @@
 ### Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- TODO
+- [Node.js 22+](https://nodejs.org/en/download)
 
 ### Backend
 
